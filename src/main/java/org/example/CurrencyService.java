@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 public class CurrencyService {
 
     public Connection con;
+    public PreparedStatement pst;
 
     public void Connect(){
         try{

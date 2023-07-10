@@ -13,18 +13,26 @@ import org.json.JSONObject;
 
 import java.io.*;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Scanner;
 
 public class Currency extends  CurrencyService{
 
+    ResultSet resultSet;
     public Currency() throws IOException {
-        sendLiveRequest();
-        writeInDatabase();
-        httpClient.close();
+        if (checkTodayCurrency()) {
+            sendLiveRequest();
+            writeInDatabase();
+            httpClient.close();
+        } else {
+            System.out.println("Today Currency allready in data base!");
+        }
     }
 
     static CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -105,19 +113,44 @@ public class Currency extends  CurrencyService{
 
     // the following method give the API Key from a file apikey.txt
     public static final String getMyApiKey(){
-        String data="";
+        String apikey ="";
         try {
             File myfile = new File("apikey.txt");
             Scanner myReader = new Scanner(myfile);
             while (myReader.hasNextLine()) {
-                data = myReader.nextLine();
+                apikey = myReader.nextLine();
             }
             myReader.close();
         } catch (FileNotFoundException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
         }
-        return data;
+        return apikey;
+    }
+
+    public boolean checkTodayCurrency(){
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MM yyyy");
+        String todayDate = LocalDateTime.now().format(dateFormat).toString();
+
+        try {
+            Connect();
+
+            String SQL = "select * from rates where date = ?";
+
+            pst = con.prepareStatement(SQL);
+            pst.setString(1,todayDate);
+
+            resultSet = pst.executeQuery();
+            if(resultSet.next()) {
+                return false;
+            }
+
+        }catch ( SQLException ex){
+            System.out.println(ex.getMessage());
+        }
+
+        return true;
+
     }
 
 }
